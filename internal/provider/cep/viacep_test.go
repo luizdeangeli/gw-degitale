@@ -23,6 +23,9 @@ func TestMapViaCep(t *testing.T) {
 	if out.Ibge != "3550308" || out.Localidade != "São Paulo" || out.Ddd != "11" {
 		t.Fatalf("%+v", out)
 	}
+	if out.TipoLogradouro != "Praça" || out.Logradouro != "da Sé" {
+		t.Fatalf("tipo=%q logradouro=%q", out.TipoLogradouro, out.Logradouro)
+	}
 }
 
 func TestMapViaCepErro(t *testing.T) {

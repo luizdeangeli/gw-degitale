@@ -169,7 +169,9 @@ paths:
       tags: [Consultas]
       operationId: consultarCep
       summary: Consultar CEP
-      description: Normaliza para 8 dígitos e devolve o endereço no formato do ViaCEP.
+      description: |
+        Normaliza para 8 dígitos. O ViaCEP manda o logradouro inteiro (`Praça da Sé`).
+        O primeiro termo vai em `tipoLogradouro` e o restante fica em `logradouro`.
       security:
         - bearerAuth: []
       parameters:
@@ -187,7 +189,8 @@ paths:
                 cached: false
                 data:
                   cep: 01001-000
-                  logradouro: Praça da Sé
+                  tipoLogradouro: Praça
+                  logradouro: da Sé
                   complemento: lado ímpar
                   bairro: Sé
                   localidade: São Paulo
@@ -463,8 +466,13 @@ components:
         cep:
           type: string
           example: 01001-000
+        tipoLogradouro:
+          type: string
+          description: Primeiro termo do logradouro vindo do ViaCEP, como Praça, Rua ou Avenida.
+          example: Praça
         logradouro:
           type: string
+          description: Nome do logradouro sem o tipo.
         complemento:
           type: string
         bairro:

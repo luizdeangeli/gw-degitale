@@ -44,8 +44,9 @@ Sucesso:
 `data` de CNPJ segue o objeto do SMG (`nmEmpresarial`, `nmFantasia`,
 `cdTipoEstabelecimento`, `dtAbertura`, `flOptanteSimplesNacional`,
 `dsSituacaoCadastral`, `atividades`, `endereco`, `telefones`, `emails`,
-`inscricoesEstaduais`). `data` de CEP segue o ViaCEP (`cep`, `logradouro`,
-`complemento`, `bairro`, `localidade`, `uf`, `ibge`, `ddd`).
+`inscricoesEstaduais`). `data` de CEP segue o ViaCEP (`cep`, `tipoLogradouro`,
+`logradouro`, `complemento`, `bairro`, `localidade`, `uf`, `ibge`, `ddd`).
+O tipo é o primeiro termo do logradouro.
 
 Erros: `401` token ausente ou inválido, `400` documento malformado,
 `404` não encontrado, `503` cadeia esgotada (`tentativas` traz provedor e status).

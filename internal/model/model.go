@@ -54,14 +54,15 @@ type InscricaoEstadual struct {
 
 // Cep espelha o retorno do ViaCEP usado pelo SMG.
 type Cep struct {
-	Cep         string `json:"cep"`
-	Logradouro  string `json:"logradouro"`
-	Complemento string `json:"complemento"`
-	Bairro      string `json:"bairro"`
-	Localidade  string `json:"localidade"`
-	Uf          string `json:"uf"`
-	Ibge        string `json:"ibge"`
-	Ddd         string `json:"ddd"`
+	Cep            string `json:"cep"`
+	TipoLogradouro string `json:"tipoLogradouro"`
+	Logradouro     string `json:"logradouro"`
+	Complemento    string `json:"complemento"`
+	Bairro         string `json:"bairro"`
+	Localidade     string `json:"localidade"`
+	Uf             string `json:"uf"`
+	Ibge           string `json:"ibge"`
+	Ddd            string `json:"ddd"`
 }
 
 func EmptyCnpj() Cnpj {

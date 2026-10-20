@@ -78,16 +78,23 @@ func MapViaCep(body []byte) (model.Cep, error) {
 	if erroTrue(payload.Erro) {
 		return model.Cep{}, &provider.Error{Kind: provider.KindNotFound, Status: http.StatusNotFound}
 	}
-	return model.Cep{
+	out := model.Cep{
 		Cep:         payload.Cep,
-		Logradouro:  payload.Logradouro,
 		Complemento: payload.Complemento,
 		Bairro:      payload.Bairro,
 		Localidade:  payload.Localidade,
 		Uf:          payload.Uf,
 		Ibge:        payload.Ibge,
 		Ddd:         payload.Ddd,
-	}, nil
+	}
+	tipo, resto := model.SplitTipo(nil, model.StrPtr(payload.Logradouro))
+	if tipo != nil {
+		out.TipoLogradouro = *tipo
+	}
+	if resto != nil {
+		out.Logradouro = *resto
+	}
+	return out, nil
 }
 
 func erroTrue(v any) bool {
