@@ -19,6 +19,8 @@ type Config struct {
 	ReceitaWSBaseURL string
 	ReceitaWSToken   string
 	ReceitaWSDays    int
+	ApiPJBaseURL     string
+	ApiPJToken       string
 	ViaCepBaseURL    string
 	HTTPTimeout      time.Duration
 	CacheTTLCnpj     time.Duration
@@ -39,7 +41,7 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
-	cnpjChain := parseList(getenv("CNPJ_CHAIN", "cnpjws,receitaws,cnpja"))
+	cnpjChain := parseList(getenv("CNPJ_CHAIN", "cnpjws,apipj,receitaws,cnpja"))
 	cepChain := parseList(getenv("CEP_CHAIN", "viacep"))
 	if len(cnpjChain) == 0 {
 		return Config{}, fmt.Errorf("CNPJ_CHAIN vazia")
@@ -63,6 +65,8 @@ func Load() (Config, error) {
 		ReceitaWSBaseURL: trimSlash(getenv("RECEITAWS_BASE_URL", "https://receitaws.com.br/v1")),
 		ReceitaWSToken:   strings.TrimSpace(os.Getenv("RECEITAWS_TOKEN")),
 		ReceitaWSDays:    days,
+		ApiPJBaseURL:     trimSlash(getenv("APIPJ_BASE_URL", "https://apipj.com.br/v1")),
+		ApiPJToken:       strings.TrimSpace(os.Getenv("APIPJ_TOKEN")),
 		ViaCepBaseURL:    trimSlash(getenv("VIACEP_BASE_URL", "https://viacep.com.br")),
 		HTTPTimeout:      timeout,
 		CacheTTLCnpj:     ttlCnpj,
