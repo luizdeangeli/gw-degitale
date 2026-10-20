@@ -9,22 +9,24 @@ import (
 )
 
 type Config struct {
-	Port             string
-	TokensRaw        string
-	CnpjChain        []string
-	CepChain         []string
-	CnpjaBaseURL     string
-	CnpjaAPIKey      string
-	CnpjwsBaseURL    string
-	ReceitaWSBaseURL string
-	ReceitaWSToken   string
-	ReceitaWSDays    int
-	ApiPJBaseURL     string
-	ApiPJToken       string
-	ViaCepBaseURL    string
-	HTTPTimeout      time.Duration
-	CacheTTLCnpj     time.Duration
-	CacheTTLCep      time.Duration
+	Port                string
+	TokensRaw           string
+	CnpjChain           []string
+	CepChain            []string
+	CnpjaBaseURL        string
+	CnpjaAPIKey         string
+	CnpjwsBaseURL       string
+	MinhaReceitaBaseURL string
+	ReceitaWSBaseURL    string
+	ReceitaWSToken      string
+	ReceitaWSDays       int
+	ApiPJBaseURL        string
+	ApiPJToken          string
+	BrasilAPIBaseURL    string
+	ViaCepBaseURL       string
+	HTTPTimeout         time.Duration
+	CacheTTLCnpj        time.Duration
+	CacheTTLCep         time.Duration
 }
 
 func Load() (Config, error) {
@@ -41,8 +43,8 @@ func Load() (Config, error) {
 		return Config{}, err
 	}
 
-	cnpjChain := parseList(getenv("CNPJ_CHAIN", "cnpjws,apipj,receitaws,cnpja"))
-	cepChain := parseList(getenv("CEP_CHAIN", "viacep"))
+	cnpjChain := parseList(getenv("CNPJ_CHAIN", "cnpjws,minhareceita,apipj,receitaws,cnpja"))
+	cepChain := parseList(getenv("CEP_CHAIN", "viacep,brasilapi"))
 	if len(cnpjChain) == 0 {
 		return Config{}, fmt.Errorf("CNPJ_CHAIN vazia")
 	}
@@ -55,22 +57,24 @@ func Load() (Config, error) {
 	}
 
 	return Config{
-		Port:             getenv("PORT", "8080"),
-		TokensRaw:        os.Getenv("GW_TOKENS"),
-		CnpjChain:        cnpjChain,
-		CepChain:         cepChain,
-		CnpjaBaseURL:     trimSlash(getenv("CNPJA_BASE_URL", "https://api.cnpja.com")),
-		CnpjaAPIKey:      strings.TrimSpace(os.Getenv("CNPJA_API_KEY")),
-		CnpjwsBaseURL:    trimSlash(getenv("CNPJWS_BASE_URL", "https://publica.cnpj.ws")),
-		ReceitaWSBaseURL: trimSlash(getenv("RECEITAWS_BASE_URL", "https://receitaws.com.br/v1")),
-		ReceitaWSToken:   strings.TrimSpace(os.Getenv("RECEITAWS_TOKEN")),
-		ReceitaWSDays:    days,
-		ApiPJBaseURL:     trimSlash(getenv("APIPJ_BASE_URL", "https://apipj.com.br/v1")),
-		ApiPJToken:       strings.TrimSpace(os.Getenv("APIPJ_TOKEN")),
-		ViaCepBaseURL:    trimSlash(getenv("VIACEP_BASE_URL", "https://viacep.com.br")),
-		HTTPTimeout:      timeout,
-		CacheTTLCnpj:     ttlCnpj,
-		CacheTTLCep:      ttlCep,
+		Port:                getenv("PORT", "8080"),
+		TokensRaw:           os.Getenv("GW_TOKENS"),
+		CnpjChain:           cnpjChain,
+		CepChain:            cepChain,
+		CnpjaBaseURL:        trimSlash(getenv("CNPJA_BASE_URL", "https://api.cnpja.com")),
+		CnpjaAPIKey:         strings.TrimSpace(os.Getenv("CNPJA_API_KEY")),
+		CnpjwsBaseURL:       trimSlash(getenv("CNPJWS_BASE_URL", "https://publica.cnpj.ws")),
+		MinhaReceitaBaseURL: trimSlash(getenv("MINHARECEITA_BASE_URL", "https://minhareceita.org")),
+		ReceitaWSBaseURL:    trimSlash(getenv("RECEITAWS_BASE_URL", "https://receitaws.com.br/v1")),
+		ReceitaWSToken:      strings.TrimSpace(os.Getenv("RECEITAWS_TOKEN")),
+		ReceitaWSDays:       days,
+		ApiPJBaseURL:        trimSlash(getenv("APIPJ_BASE_URL", "https://apipj.com.br/v1")),
+		ApiPJToken:          strings.TrimSpace(os.Getenv("APIPJ_TOKEN")),
+		BrasilAPIBaseURL:    trimSlash(getenv("BRASILAPI_BASE_URL", "https://brasilapi.com.br/api")),
+		ViaCepBaseURL:       trimSlash(getenv("VIACEP_BASE_URL", "https://viacep.com.br")),
+		HTTPTimeout:         timeout,
+		CacheTTLCnpj:        ttlCnpj,
+		CacheTTLCep:         ttlCep,
 	}, nil
 }
 

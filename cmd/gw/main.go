@@ -95,6 +95,8 @@ func buildCnpj(cfg config.Config, client *http.Client) (*lookup.Chain, error) {
 		switch name {
 		case "cnpjws":
 			list = append(list, cnpj.NewCnpjWs(client, cfg.CnpjwsBaseURL, cfg.HTTPTimeout))
+		case "minhareceita":
+			list = append(list, cnpj.NewMinhaReceita(client, cfg.MinhaReceitaBaseURL, cfg.HTTPTimeout))
 		case "apipj":
 			if cfg.ApiPJToken == "" {
 				log.Printf("apipj sem APIPJ_TOKEN, fora da cadeia")
@@ -129,6 +131,8 @@ func buildCep(cfg config.Config, client *http.Client) (*lookup.Chain, error) {
 		switch name {
 		case "viacep":
 			list = append(list, cep.NewViaCep(client, cfg.ViaCepBaseURL, cfg.HTTPTimeout))
+		case "brasilapi":
+			list = append(list, cep.NewBrasilAPI(client, cfg.BrasilAPIBaseURL, cfg.HTTPTimeout))
 		default:
 			return nil, fmt.Errorf("provedor de cep desconhecido: %s", name)
 		}

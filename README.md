@@ -57,11 +57,12 @@ do mesmo documento não gasta cota.
 ## Cadeia inicial
 
 ```
-CNPJ: cnpjws → apipj → receitaws → cnpja
-CEP:  viacep
+CNPJ: cnpjws → minhareceita → apipj → receitaws → cnpja
+CEP:  viacep → brasilapi
 ```
 
-`cnpjws` é a API pública (cerca de 3 consultas por minuto). `apipj` é a
+`cnpjws` é a API pública (cerca de 3 consultas por minuto). `minhareceita` é a
+[Minha Receita](https://minhareceita.org), sem chave. `apipj` é a
 [API do apipj](https://apipj.com.br/docs) e só entra se `APIPJ_TOKEN` estiver
 preenchida. `receitaws` é a [API comercial da ReceitaWS](https://developers.receitaws.com.br/)
 e só entra se `RECEITAWS_TOKEN` estiver preenchida. `cnpja` só entra se

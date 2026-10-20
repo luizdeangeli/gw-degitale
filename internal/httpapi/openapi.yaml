@@ -51,8 +51,8 @@ info:
 
     A ordem fica no servidor. Hoje:
 
-    - CNPJ: `cnpjws`, depois `apipj`, depois `receitaws`, depois `cnpja`
-    - CEP: `viacep`
+    - CNPJ: `cnpjws`, depois `minhareceita`, depois `apipj`, depois `receitaws`, depois `cnpja`
+    - CEP: `viacep`, depois `brasilapi`
 
     Se o provedor responde **429**, **5xx**, estoura o tempo ou recusa a credencial,
     a consulta segue para o próximo. **404** encerra: o documento não existe, e o
@@ -320,7 +320,7 @@ components:
           type: boolean
         provider:
           type: string
-          description: Provedor que entregou o dado (`cnpjws`, `apipj`, `receitaws` ou `cnpja`).
+          description: Provedor que entregou o dado (`cnpjws`, `minhareceita`, `apipj`, `receitaws` ou `cnpja`).
         cached:
           type: boolean
         data:
