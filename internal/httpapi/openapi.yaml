@@ -51,7 +51,7 @@ info:
 
     A ordem fica no servidor. Hoje:
 
-    - CNPJ: `cnpjws`, depois `cnpja`
+    - CNPJ: `cnpjws`, depois `receitaws`, depois `cnpja`
     - CEP: `viacep`
 
     Se o provedor responde **429**, **5xx**, estoura o tempo ou recusa a credencial,
@@ -320,7 +320,7 @@ components:
           type: boolean
         provider:
           type: string
-          description: Provedor que entregou o dado (`cnpjws` ou `cnpja`).
+          description: Provedor que entregou o dado (`cnpjws`, `receitaws` ou `cnpja`).
         cached:
           type: boolean
         data:

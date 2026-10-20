@@ -57,13 +57,16 @@ do mesmo documento não gasta cota.
 ## Cadeia inicial
 
 ```
-CNPJ: cnpjws → cnpja
+CNPJ: cnpjws → receitaws → cnpja
 CEP:  viacep
 ```
 
-`cnpjws` é a API pública (cerca de 3 consultas por minuto). `cnpja` só entra se
-`CNPJA_API_KEY` estiver preenchida. Sem a chave, o processo sobe só com o que
-deu para configurar e registra isso no log.
+`cnpjws` é a API pública (cerca de 3 consultas por minuto). `receitaws` é a
+[API comercial da ReceitaWS](https://developers.receitaws.com.br/) e só entra
+se `RECEITAWS_TOKEN` estiver preenchida. `cnpja` só entra se `CNPJA_API_KEY`
+estiver preenchida. Sem a chave, o processo sobe só com o que deu para
+configurar e registra isso no log. `RECEITAWS_DAYS` é a defasagem máxima
+aceita no cache deles (padrão 30).
 
 ## Primeira instalação
 

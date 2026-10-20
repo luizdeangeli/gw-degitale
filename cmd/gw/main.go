@@ -95,6 +95,12 @@ func buildCnpj(cfg config.Config, client *http.Client) (*lookup.Chain, error) {
 		switch name {
 		case "cnpjws":
 			list = append(list, cnpj.NewCnpjWs(client, cfg.CnpjwsBaseURL, cfg.HTTPTimeout))
+		case "receitaws":
+			if cfg.ReceitaWSToken == "" {
+				log.Printf("receitaws sem RECEITAWS_TOKEN, fora da cadeia")
+				continue
+			}
+			list = append(list, cnpj.NewReceitaWS(client, cfg.ReceitaWSBaseURL, cfg.ReceitaWSToken, cfg.ReceitaWSDays, cfg.HTTPTimeout))
 		case "cnpja":
 			if cfg.CnpjaAPIKey == "" {
 				log.Printf("cnpja sem CNPJA_API_KEY, fora da cadeia")
