@@ -1,0 +1,479 @@
+openapi: 3.0.3
+info:
+  title: Gateway Degitale
+  version: "1.0.0"
+  description: |
+    Centralizador de consultas de **CNPJ** e **CEP**. O seu sistema chama uma URL
+    só. O gateway percorre os provedores e devolve o JSON já normalizado.
+
+    ## Autenticação
+
+    Envie o token do seu sistema no header:
+
+    ```
+    Authorization: Bearer <token>
+    ```
+
+    `/health` e esta documentação são públicos. As consultas exigem token.
+    Cada sistema tem o seu. O log do servidor grava o nome do sistema, nunca o segredo.
+
+    Inclua um `User-Agent` com o nome do sistema. A Cloudflare pode responder
+    `403` (código 1010) para cliente sem identificação.
+
+    ## Consulta
+
+    O caminho aceita o número com ou sem pontuação. Pontos e traços são ignorados.
+    O CNPJ **não pode levar barra**: `00.000.000/0001-00` quebra a rota. Envie os 14 dígitos.
+
+    ```bash
+    curl -s https://gw.degitale.com.br/v1/cnpj/47960950000121 \
+      -H "Authorization: Bearer $GW_TOKEN" \
+      -H "User-Agent: smg" \
+      -H "Accept: application/json"
+    ```
+
+    ```php
+    $cnpj = preg_replace('/\D/', '', $cnpj);
+    $ch = curl_init('https://gw.degitale.com.br/v1/cnpj/' . $cnpj);
+    curl_setopt_array($ch, [
+        CURLOPT_HTTPHEADER => [
+            'Authorization: Bearer ' . getenv('GW_TOKEN'),
+            'Accept: application/json',
+            'User-Agent: smg',
+        ],
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 20,
+    ]);
+    $body = json_decode(curl_exec($ch));
+    ```
+
+    ## Cadeia de provedores
+
+    A ordem fica no servidor. Hoje:
+
+    - CNPJ: `cnpjws`, depois `cnpja`
+    - CEP: `viacep`
+
+    Se o provedor responde **429**, **5xx**, estoura o tempo ou recusa a credencial,
+    a consulta segue para o próximo. **404** encerra: o documento não existe, e o
+    próximo provedor não é chamado.
+
+    Se todos falharem, a resposta é `503` com `tentativas` (nome do provedor e status).
+    O corpo cru do provedor não volta para o cliente.
+
+    O campo `provider` diz quem respondeu. `cached: true` significa que o resultado
+    saiu da memória do gateway e não gastou cota. CNPJ fica em cache por 24 horas.
+    CEP fica por 7 dias.
+
+    ## Erros
+
+    | HTTP | `error` | Quando |
+    |------|---------|--------|
+    | 401 | `nao_autorizado` | token ausente ou inválido |
+    | 400 | `documento_invalido` | CNPJ sem 14 dígitos ou CEP sem 8 |
+    | 404 | `nao_encontrado` | o provedor não achou o documento |
+    | 503 | `provedores_indisponiveis` | a cadeia inteira falhou |
+
+servers:
+  - url: https://gw.degitale.com.br
+tags:
+  - name: Consultas
+    description: CNPJ e CEP
+  - name: Operação
+    description: Saúde do serviço
+paths:
+  /health:
+    get:
+      tags: [Operação]
+      operationId: health
+      summary: Saúde do serviço
+      description: Não exige token. Use para saber se o processo está no ar.
+      security: []
+      responses:
+        "200":
+          description: Serviço no ar
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+              example:
+                ok: true
+  /v1/cnpj/{cnpj}:
+    get:
+      tags: [Consultas]
+      operationId: consultarCnpj
+      summary: Consultar CNPJ
+      description: |
+        Normaliza para 14 dígitos e devolve o cadastro no formato usado pelo SMG.
+        `cidade`, `pais` e `estado` vêm nulos: o sistema de origem resolve esses
+        cadastros no banco dele.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cnpj"
+      responses:
+        "200":
+          description: Cadastro encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CnpjResposta"
+              example:
+                ok: true
+                provider: cnpjws
+                cached: false
+                data:
+                  nmEmpresarial: MAGAZINE LUIZA S/A
+                  nmFantasia: MAGAZINE LUIZA
+                  cdTipoEstabelecimento: MATRIZ
+                  dtAbertura: "1966-10-24"
+                  flOptanteSimplesNacional: false
+                  dsSituacaoCadastral: Ativa
+                  atividades:
+                    - cdAtividade: "4713004"
+                      nmAtividade: Lojas de departamentos ou magazines
+                      flPrincipal: true
+                  endereco:
+                    dsNumero: "1465"
+                    dsComplemento: null
+                    dsBairro: ""
+                    cdTipoLogradouro: RUA
+                    cdTipoBairro: CENTRO
+                    dsLogradouro: VOLUNTARIOS DA FRANCA
+                    nrCep: "14400490"
+                    idCidadeIbge: 3516200
+                    cidade: null
+                    vlLatitude: null
+                    vlLongitude: null
+                  telefones:
+                    - cdIso3Pais: BRA
+                      pais: null
+                      nrTelefone: "1637112002"
+                  emails:
+                    - dsEmail: fiscal.estadual@magazineluiza.com.br
+                  inscricoesEstaduais:
+                    - nrInscricaoEstadual: "310035324119"
+                      cdEstado: null
+                      idEstadoIbge: 35
+                      estado: null
+        "400":
+          $ref: "#/components/responses/DocumentoInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutorizado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "503":
+          $ref: "#/components/responses/Indisponivel"
+  /v1/cep/{cep}:
+    get:
+      tags: [Consultas]
+      operationId: consultarCep
+      summary: Consultar CEP
+      description: Normaliza para 8 dígitos e devolve o endereço no formato do ViaCEP.
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/cep"
+      responses:
+        "200":
+          description: Endereço encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CepResposta"
+              example:
+                ok: true
+                provider: viacep
+                cached: false
+                data:
+                  cep: 01001-000
+                  logradouro: Praça da Sé
+                  complemento: lado ímpar
+                  bairro: Sé
+                  localidade: São Paulo
+                  uf: SP
+                  ibge: "3550308"
+                  ddd: "11"
+        "400":
+          $ref: "#/components/responses/DocumentoInvalido"
+        "401":
+          $ref: "#/components/responses/NaoAutorizado"
+        "404":
+          $ref: "#/components/responses/NaoEncontrado"
+        "503":
+          $ref: "#/components/responses/Indisponivel"
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token nomeado do sistema, entregue em `GW_TOKENS` no servidor.
+  parameters:
+    cnpj:
+      name: cnpj
+      in: path
+      required: true
+      description: 14 dígitos. Pontos e traços são aceitos. Barra não.
+      schema:
+        type: string
+        example: "47960950000121"
+    cep:
+      name: cep
+      in: path
+      required: true
+      description: 8 dígitos. O hífen é aceito.
+      schema:
+        type: string
+        example: "01001000"
+  responses:
+    DocumentoInvalido:
+      description: O número não tem a quantidade de dígitos esperada
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Erro"
+          example:
+            ok: false
+            error: documento_invalido
+    NaoAutorizado:
+      description: Token ausente ou inválido
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Erro"
+          example:
+            ok: false
+            error: nao_autorizado
+    NaoEncontrado:
+      description: Nenhum provedor achou o documento
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Erro"
+          example:
+            ok: false
+            error: nao_encontrado
+    Indisponivel:
+      description: Todos os provedores falharam por limite, tempo ou erro
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Indisponivel"
+          example:
+            ok: false
+            error: provedores_indisponiveis
+            tentativas:
+              - provider: cnpjws
+                status: "429"
+              - provider: cnpja
+                status: timeout
+  schemas:
+    Health:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+    Erro:
+      type: object
+      required: [ok, error]
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+    Tentativa:
+      type: object
+      required: [provider, status]
+      properties:
+        provider:
+          type: string
+          description: Nome do provedor que falhou.
+          example: cnpjws
+        status:
+          type: string
+          description: Código HTTP ou `timeout` / `erro_rede`.
+          example: "429"
+    Indisponivel:
+      type: object
+      required: [ok, error, tentativas]
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: provedores_indisponiveis
+        tentativas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Tentativa"
+    CnpjResposta:
+      type: object
+      required: [ok, provider, cached, data]
+      properties:
+        ok:
+          type: boolean
+        provider:
+          type: string
+          description: Provedor que entregou o dado (`cnpjws` ou `cnpja`).
+        cached:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/Cnpj"
+    CepResposta:
+      type: object
+      required: [ok, provider, cached, data]
+      properties:
+        ok:
+          type: boolean
+        provider:
+          type: string
+          example: viacep
+        cached:
+          type: boolean
+        data:
+          $ref: "#/components/schemas/Cep"
+    Cnpj:
+      type: object
+      properties:
+        nmEmpresarial:
+          type: string
+          description: Razão social.
+        nmFantasia:
+          type: string
+          nullable: true
+        cdTipoEstabelecimento:
+          type: string
+          description: MATRIZ ou FILIAL.
+        dtAbertura:
+          type: string
+          description: Data de abertura, `AAAA-MM-DD`.
+          example: "1966-10-24"
+        flOptanteSimplesNacional:
+          type: boolean
+          nullable: true
+        dsSituacaoCadastral:
+          type: string
+          nullable: true
+        atividades:
+          type: array
+          items:
+            $ref: "#/components/schemas/Atividade"
+        endereco:
+          $ref: "#/components/schemas/Endereco"
+        telefones:
+          type: array
+          items:
+            $ref: "#/components/schemas/Telefone"
+        emails:
+          type: array
+          items:
+            $ref: "#/components/schemas/Email"
+        inscricoesEstaduais:
+          type: array
+          items:
+            $ref: "#/components/schemas/InscricaoEstadual"
+    Atividade:
+      type: object
+      properties:
+        cdAtividade:
+          type: string
+          description: Código CNAE, sempre texto.
+        nmAtividade:
+          type: string
+        flPrincipal:
+          type: boolean
+    Endereco:
+      type: object
+      properties:
+        dsNumero:
+          type: string
+          nullable: true
+        dsComplemento:
+          type: string
+          nullable: true
+        dsBairro:
+          type: string
+          nullable: true
+        cdTipoLogradouro:
+          type: string
+          nullable: true
+          description: Primeiro termo do logradouro quando o provedor não separa o tipo.
+        cdTipoBairro:
+          type: string
+          nullable: true
+        dsLogradouro:
+          type: string
+          nullable: true
+        nrCep:
+          type: string
+          nullable: true
+        idCidadeIbge:
+          type: integer
+          nullable: true
+          description: Código IBGE do município.
+        cidade:
+          type: string
+          nullable: true
+          description: Sempre nulo. O sistema de origem preenche com o cadastro local.
+        vlLatitude:
+          type: number
+          nullable: true
+        vlLongitude:
+          type: number
+          nullable: true
+    Telefone:
+      type: object
+      properties:
+        cdIso3Pais:
+          type: string
+          example: BRA
+        pais:
+          type: string
+          nullable: true
+        nrTelefone:
+          type: string
+          description: DDD e número juntos, só dígitos.
+    Email:
+      type: object
+      properties:
+        dsEmail:
+          type: string
+    InscricaoEstadual:
+      type: object
+      properties:
+        nrInscricaoEstadual:
+          type: string
+        cdEstado:
+          type: string
+          nullable: true
+          description: Sigla da UF. Preenchida pelo CNPJá.
+        idEstadoIbge:
+          type: integer
+          nullable: true
+          description: Código IBGE da UF. Preenchido pelo CNPJ.ws.
+        estado:
+          type: string
+          nullable: true
+    Cep:
+      type: object
+      properties:
+        cep:
+          type: string
+          example: 01001-000
+        logradouro:
+          type: string
+        complemento:
+          type: string
+        bairro:
+          type: string
+        localidade:
+          type: string
+        uf:
+          type: string
+        ibge:
+          type: string
+        ddd:
+          type: string

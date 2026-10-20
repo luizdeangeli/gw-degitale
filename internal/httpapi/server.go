@@ -29,6 +29,8 @@ type Server struct {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /health", s.health)
+	mux.HandleFunc("GET /docs", s.docs)
+	mux.HandleFunc("GET /openapi.yaml", s.openapi)
 	mux.HandleFunc("GET /v1/cnpj/{cnpj}", s.auth(s.cnpj))
 	mux.HandleFunc("GET /v1/cep/{cep}", s.auth(s.cep))
 	return mux

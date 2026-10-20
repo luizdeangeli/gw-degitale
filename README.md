@@ -15,11 +15,15 @@ documento não existe.
 
 ## Endpoints
 
-Autenticação: `Authorization: Bearer <token>`. `/health` é público.
+Autenticação: `Authorization: Bearer <token>`. `/health` e a documentação são públicos.
+
+A referência para quem vai integrar está em `https://gw.degitale.com.br/docs` (Redoc).
 
 | Método | Caminho | Resposta |
 |--------|---------|----------|
 | `GET` | `/health` | liveness |
+| `GET` | `/docs` | documentação |
+| `GET` | `/openapi.yaml` | contrato OpenAPI |
 | `GET` | `/v1/cnpj/{cnpj}` | 14 dígitos; pontos e traços são ignorados |
 | `GET` | `/v1/cep/{cep}` | 8 dígitos |
 

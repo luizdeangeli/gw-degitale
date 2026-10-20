@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -56,6 +57,18 @@ func get(t *testing.T, h http.Handler, path, token string) *httptest.ResponseRec
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
 	return rec
+}
+
+func TestDocsPublic(t *testing.T) {
+	h := newServer(&stub{name: "cnpjws"}, &stub{name: "viacep"}).Handler()
+	rec := get(t, h, "/docs", "")
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "redoc") {
+		t.Fatal(rec.Code, rec.Body.String())
+	}
+	rec = get(t, h, "/openapi.yaml", "")
+	if rec.Code != 200 || !strings.Contains(rec.Body.String(), "/v1/cnpj/{cnpj}") {
+		t.Fatal(rec.Code, rec.Body.String())
+	}
 }
 
 func TestHealthPublic(t *testing.T) {
