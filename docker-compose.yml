@@ -1,0 +1,50 @@
+name: degitale-gw
+
+services:
+
+  # ─────────────────────────────────────────────
+  # GATEWAY: gw.degitale.com.br
+  # Traefik global: infra/docker-compose.yml (proxy-traefik)
+  # Consulta CNPJ e CEP com cadeia de provedores
+  # ─────────────────────────────────────────────
+  gw:
+    build: .
+    image: degitale-gw:local
+    container_name: degitale-gw
+    restart: unless-stopped
+    expose:
+      - "8080"
+    env_file:
+      - .env
+    environment:
+      TZ: America/Sao_Paulo
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - traefik-public
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=traefik-public
+      # SSL na borda do Cloudflare — visitante só HTTPS; origem HTTPS com cert default (modo Full)
+      - traefik.http.routers.gw-degitale-http.rule=Host(`gw.degitale.com.br`)
+      - traefik.http.routers.gw-degitale-http.entrypoints=web
+      - traefik.http.routers.gw-degitale-http.middlewares=redirect-to-https@file
+      - traefik.http.routers.gw-degitale-http.service=gw-degitale
+      - traefik.http.routers.gw-degitale.rule=Host(`gw.degitale.com.br`)
+      - traefik.http.routers.gw-degitale.entrypoints=websecure
+      - traefik.http.routers.gw-degitale.tls=true
+      - traefik.http.routers.gw-degitale.service=gw-degitale
+      - traefik.http.services.gw-degitale.loadbalancer.server.port=8080
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+
+networks:
+  traefik-public:
+    external: true
